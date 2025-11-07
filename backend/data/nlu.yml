@@ -1,0 +1,103 @@
+nlu:
+  - intent: greet
+    examples: |
+      - Ciao
+      - Buongiorno
+      - Salve
+      - Buondì
+      - Buon mattino
+      - Salutone
+      - Buona giornata
+      - Buon giorno
+      - Ehi, mattina!
+      - Ciaosky
+      - Saluti
+      - Bonjour
+      - Buona alba
+      - Salveggiare
+  
+
+  - intent: affirm
+    examples: |
+      - sì
+      - certamente
+      - sicuro
+      - va bene
+      - certo
+      - ok
+
+  - intent: deny
+    examples: |
+      - no
+      - non voglio
+      - niente
+      - non sono interessato
+      - rifiuto
+      - basta
+  
+  - intent: menu
+    examples: |
+      - Posso vedere le opzioni disponibili?
+      - Puoi mostrarmi cosa sai fare?
+      - Quali sono le tue funzioni principali?
+      - Cosa sei in grado di fare?
+      - Potresti elencarmi le tue capacità?
+      - Hai un menu delle opzioni?
+      - Posso esplorare le tue funzionalità?
+      - Puoi dirmi cosa posso chiederti?
+      - Hai una lista di comandi che comprendi?
+      - Quali sono le tue abilità?
+      - Potresti indicarmi cosa posso chiederti?
+      - Puoi presentarmi le tue caratteristiche? 
+      - Cosa posso aspettarmi da te?
+      - Quali sono le tue competenze?
+      - Hai un elenco di comandi accettati?
+      - Potrei vedere le opzioni disponibili?
+      - Cosa sai fare per aiutarmi?
+      - Puoi dirmi come posso interagire con te?
+      - Quali sono le tue funzionalità principali?
+      - Potresti farmi vedere il tuo menu delle opzioni?
+
+  - intent: general_information
+    examples: |
+      - Vorrei informazioni generali
+      - Mi dai info?
+      - Che cos'è questo servizio?
+
+  - intent: request_assistance
+    examples: |
+      - Voglio assistenza
+      - Ho bisogno di aiuto
+      - Aiutami
+      - Vorrei parlare con un operatore
+      - Accedi
+      - Fai il login
+
+  - intent: info_hwsw
+    examples: |
+      - informazioni su programmi
+      - hardware e software
+      - hw e SW
+      - Informatica
+      - fotocopiatori
+      - programmi
+
+  - intent: info_registratoricassa
+    examples: |
+      - informazioni su registratori di cassa
+      - scontrini
+      - cassa
+      - registratore fiscale
+
+  - intent: provide_username
+    examples: |
+      - il mio nome è [12345678901](username)
+      - sono [23456789012](username)
+      - mi chiamo [34567890123](username)
+      - [45678901234](username)
+      - eccomi, [56789012345](username)
+      - [678901234567](username)
+      - io sono [89012345678](username)
+      - ecco il mio nome: [90123456789](username)
+
+  

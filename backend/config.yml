@@ -1,0 +1,50 @@
+# Configuration for Rasa NLU.
+# The config recipe.
+# https://rasa.com/docs/rasa/model-configuration/
+recipe: default.v1
+
+# The assistant project unique identifier
+# This default value must be replaced with a unique assistant name within your deployment
+assistant_id: armando_V_0_0b
+
+# Configuration for Rasa NLU.
+# https://rasa.com/docs/rasa/nlu/components/
+language: it
+
+pipeline:
+  - name: SpacyNLP
+    model: "it_core_news_md"
+  - name: SpacyTokenizer
+  - name: SpacyFeaturizer
+  - name: RegexFeaturizer
+  - name: LexicalSyntacticFeaturizer
+  - name: CountVectorsFeaturizer
+    analyzer: "char_wb"
+    min_ngram: 1
+    max_ngram: 4
+  - name: DIETClassifier
+    epochs: 100
+  - name: EntitySynonymMapper
+  - name: ResponseSelector
+    epochs: 100
+  - name: FallbackClassifier
+    threshold: 0.4  # soglia per fallback NLU (0.4 è ragionevole)
+    ambiguity_threshold: 0.1
+
+policies:
+  - name: AugmentedMemoizationPolicy
+  - name: TEDPolicy
+    max_history: 5
+    epochs: 100
+  - name: RulePolicy
+    core_fallback_threshold: 0.2
+    core_fallback_action_name: "action_default_fallback"
+
+tracker_store:
+  type: SQL
+  dialect: "postgresql"
+  url: "jdbc:postgresql://postgres:my-secret-password@localhost:5432/tracker_db"
+  table: "rasa_tracker"
+
+action_endpoint:
+  url: "http://localhost:5055/webhook"

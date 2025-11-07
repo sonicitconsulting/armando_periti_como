@@ -1,0 +1,73 @@
+services:
+
+    armando_frontend:
+      container_name: "armando_frontend"
+      image: armando_frontend:latest
+      ports:
+        - ${FRONTEND_HTTP_PORT}:80
+
+    armando_backend:
+      container_name: "armando_backend"
+      image: armando_backend:latest
+      ports: 
+        - ${BACKEND_API_PORT}:5005
+      depends_on:
+        - armando_conversation_db
+      command: 
+        - run
+        - -m
+        - /app/models
+        - --enable-api
+        - --cors
+        - "*"
+        - --debug
+        - --endpoints
+        - /app/endpoints.yml
+      networks:
+        - armando_network
+
+    armando_actions:
+      container_name: "armando_actions"
+      image: armando_actions:latest
+      ports:
+        - ${ACTIONS_ENGINE_PORT}:5055
+      networks:
+        - armando_network
+
+    armando_conversation_db:
+      container_name: armando_conversation_db
+      image: mongo:latest
+      ports:
+        - ${CONVERSATION_DB_PORT}:27017
+      volumes:
+        - ./armando-trackerdb:/data/db
+      networks: 
+        - armando_network
+      environment:
+        - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+        - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+
+    armando_conversation_db_gui:
+      container_name: armando_conversation_db_gui
+      image: mongo-express
+      depends_on:
+        - armando_conversation_db
+      networks: 
+        - armando_network
+      environment:
+        - ME_CONFIG_MONGODB_SERVER=armando_conversation_db
+        - ME_CONFIG_MONGODB_ADMINUSERNAME=${ME_CONFIG_MONGODB_ADMINUSERNAME}
+        - ME_CONFIG_MONGODB_ADMINPASSWORD=${ME_CONFIG_MONGODB_ADMINPASSWORD}
+        - ME_CONFIG_BASICAUTH_USERNAME=${ME_CONFIG_BASICAUTH_USERNAME}
+        - ME_CONFIG_BASICAUTH_PASSWORD=${ME_CONFIG_BASICAUTH_PASSWORD}
+        - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      ports:
+        - ${DB_GUI_PORT}:8081
+      volumes: 
+        - ./armando-trackerdb:/data/db
+
+networks:
+  armando_network:
+    driver: bridge
+
+

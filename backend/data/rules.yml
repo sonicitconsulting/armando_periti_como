@@ -1,0 +1,107 @@
+rules:
+
+  - rule: risposta diretta a general_information
+    steps:
+      - intent: general_information
+      - action: utter_info_generali
+
+  - rule: fallback rule
+    steps:
+      - intent: nlu_fallback
+      - action: action_default_fallback
+
+  - rule: Selezione assistenza mago
+    steps:
+      - intent: assistenza_mago
+      - action: action_set_service_area_mago
+      - slot_was_set:
+          - service_area: mago
+      - action: generic_assistance_form        # ← AGGIUNTO
+      - active_loop: generic_assistance_form
+
+  - rule: Selezione assistenza fotocopiatori
+    steps:
+      - intent: assistenza_fotocopiatori
+      - action: action_set_service_area_fotocopiatori
+      - slot_was_set:
+          - service_area: fotocopiatori
+      - action: generic_assistance_form        # ← AGGIUNTO
+      - active_loop: generic_assistance_form
+
+  - rule: Selezione assistenza registratori di cassa
+    steps:
+      - intent: assistenza_registratori_di_cassa
+      - action: action_set_service_area_registratori_di_cassa
+      - slot_was_set:
+          - service_area: registratori_di_cassa
+      - action: generic_assistance_form        # ← AGGIUNTO
+      - active_loop: generic_assistance_form
+
+  - rule: Completamento form assistenza generica
+    condition:
+      - active_loop: generic_assistance_form
+    steps:
+      - action: generic_assistance_form
+      - active_loop: null
+      - action: action_ask_llm
+      - action: utter_ask_confirm_llm_solution
+
+  - rule: Soluzione confermata
+    condition:
+      - active_loop: null
+    steps:
+      - intent: confirm_solution
+      - action: action_open_a_closed_ticket
+      - action: utter_solution_confirmed
+
+  - rule: Soluzione rifiutata
+    condition:
+      - active_loop: null
+    steps:
+      - intent: reject_solution
+      - action: utter_ask_for_opening_ticket
+
+  - rule: Ticket rifiutato
+    condition:
+      - active_loop: null
+    steps:
+      - intent: reject_ticket
+      - action: utter_solution_confirmed
+
+  - rule: Ticket accettato
+    condition:
+      - active_loop: null
+    steps:
+      - intent: confirm_ticket
+      - action: action_open_a_open_ticket
+      - action: utter_solution_confirmed
+
+  - rule: Informazioni su HW e SW
+    steps:
+      - intent: info_hwsw
+      - action: action_set_info_type_1
+      - slot_was_set:
+          - info_type: hwsw
+      - action: info_request_form        # ← AGGIUNTO
+      - active_loop: info_request_form
+
+  - rule: Informazioni su registratori di cassa
+    steps:
+      - intent: info_registratoricassa
+      - action: action_set_info_type_2
+      - slot_was_set:
+          - info_type: regcas
+      - action: info_request_form        # ← AGGIUNTO
+      - active_loop: info_request_form
+
+  - rule: Completamento form informazioni commerciali
+    condition:
+      - active_loop: info_request_form
+    steps:
+      - action: info_request_form
+      - active_loop: null
+      - action: action_send_mail_for_info
+
+
+
+  

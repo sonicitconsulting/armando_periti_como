@@ -1,0 +1,53 @@
+stories:
+
+  - story: benvenuto iniziale
+    steps:
+      - intent: start_conversation
+      - action: action_download_logo
+      - action: utter_greet
+      - action: utter_menu_principale
+
+  - story: pubblica menu principale
+    steps: 
+      - intent: menu
+      - action: utter_menu_principale
+
+  - story: under construction
+    steps:
+      - intent: under_construction
+      - action: utter_under_construction
+
+  - story: information
+    steps:
+      - intent: general_information
+      - action: utter_info_generali
+
+  - story: commercial informations
+    steps:
+      - intent: commercial_information
+      - action: utter_ask_for_commercial_info
+
+  - story: Login process - successful
+    steps:
+      - intent: request_assistance
+      - action: utter_ask_username
+      - intent: provide_username
+        entities:
+          - username: "12345678901"
+      - action: action_validate_login
+      - slot_was_set:
+        - user_logged: true
+      - action: utter_area_assistenza
+
+  - story: Login process - failed login
+    steps:
+      - intent: request_assistance
+      - action: utter_ask_username
+      - intent: provide_username
+        entities:
+          - username: "12345678901"
+      - action: action_validate_login
+      - slot_was_set:
+          - user_logged: false
+      - action: utter_login_fail
+      - action: utter_solution_confirmed
