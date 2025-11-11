@@ -9,138 +9,13 @@ intents:
   - menu
   - start_conversation
   - under_construction
-  - request_assistance
-  - general_information
-  - provide_username
-  - assistenza_mago
-  - assistenza_registratori_di_cassa
-  - assistenza_fotocopiatori
-  - confirm_solution
-  - reject_solution
-  - confirm_ticket
-  - reject_ticket
-  - commercial_information
-  - info_hwsw
-  - info_registratoricassa
 
-entities:
-  - username
 
-slots:
-  username:
-    type: text
-    influence_conversation: true
-    mappings:
-      - type: from_entity
-        entity: username
-
-  user_logged:
-    type: bool
-    influence_conversation: true
-    mappings:
-      - type: custom  # Impostato manualmente da un'azione personalizzata
-
-  service_area:
-    type: text
-    influence_conversation: true
-    mappings:
-      - type: custom # Impostato manualmente da un'azione personalizzata 
-
-  info_type:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: custom # Impostato manualmente da un'azione personalizzata 
-
-  device_model:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_text
-        # ➜ usa il messaggio solo se il form è attivo
-        #    *e* sta chiedendo proprio device_model
-        conditions:
-          - active_loop: generic_assistance_form
-            requested_slot: device_model
-        not_intent:
-          - assistenza_fotocopiatori
-          - assistenza_mago
-          - assistenza_registratori_di_cassa
-
-  problem_description:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_text
-        conditions:
-          - active_loop: generic_assistance_form
-            requested_slot: problem_description
-        not_intent:
-          - assistenza_fotocopiatori
-          - assistenza_mago
-          - assistenza_registratori_di_cassa
-  
-  llm_solution:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_text
-        not_intent: [confirm_solution, affirm, deny]
-
-  auth_bearer:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_text
-
-  atium_user_id:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_text
-
-  info_request:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_text
-        conditions:
-          - active_loop: info_request_form
-            requested_slot: info_request
-        not_intent:
-          - assistenza_fotocopiatori
-          - assistenza_mago
-          - assistenza_registratori_di_cassa
-
-  info_address:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_text
-        conditions:
-          - active_loop: info_request_form
-            requested_slot: info_address
-        not_intent:
-          - assistenza_fotocopiatori
-          - assistenza_mago
-          - assistenza_registratori_di_cassa
-  
-forms:
-  generic_assistance_form:
-    required_slots:
-      - device_model
-      - problem_description
-  
-  info_request_form:
-    required_slots:
-      - info_address
-      - info_type
-      - info_request
 
 responses:
   
   utter_greet:
-    - text: "Buongiorno! Sono Geronimo, l'assistente virtuale di Vanoncini s.a.s. \n"
+    - text: "Buongiorno! Sono Peritus \n"
 
   utter_privacy-policy:
     - text: "Se continui a utilizzare le mie funzionalità, accetti la privacy polici disponibile a [Link]"
@@ -152,95 +27,17 @@ responses:
           payload: /request_assistance
         - title: "Informazioni generali"
           payload: /general_information
-        - title: "Informazioni commerciali"
+        - title: "Fissa appuntamento"
           payload: /commercial_information
 
   utter_under_construction:
     - text: "Sto ancora imparando questo argomento, torna più tardi!"
 
   utter_info_generali:
-    - text: "Da oltre 40 anni Vanoncini mette al servizio delle Aziende la propria competenza professionalità ed esperienza in diversi ambiti IT. <br> 
-              Trovi maggiori informazioni sul nostro <a href='https://vanoncinisas.com/'>sito ufficiale</a> <br> Puoi contattarci allo 035.224154"
-
-  utter_ask_username:
-    - text: "Per favore, inserisci la tua partita IVA."
-
-  utter_login_success:
-    - text: "Utente autenticato."
-
-  utter_login_fail:
-    - text: "Utente sconosciuto. Si prega di contattare il servizio di assistenza allo 035.224154"
-
-  utter_area_assistenza:
-    - text: "Su che tipo di prodotto ha bisogno di assistenza?"
-      buttons:
-        - title: "Mago"
-          payload: /assistenza_mago
-        - title: "Registratori di cassa"
-          payload: /assistenza_registratori_di_cassa
-        - title: "Fotocopiatori"
-          payload: /assistenza_fotocopiatori  
-
-  utter_ask_device_model:
-    - text: "Per favore, indicami marca e modello del dispositivo o la versione di Mago."
-
-  utter_ask_problem_description:
-    - text: "Descrivimi brevemente il problema riscontrato." 
-  
-  utter_ask_confirm_llm_solution:
-    - text: "La soluzione proposta è stata utile?"
-      buttons:
-        - title: "Sì"
-          payload: /confirm_solution
-        - title: "No"
-          payload: /reject_solution
-
-  utter_solution_confirmed:
-    - text: "Grazie per aver usato il sistema di assistenza virutale di Vanoncini s.a.s.!"
-
-  utter_no_knowledge_base:
-    - text: "Purtroppo non ho informazioni su questo argomento"
-
-  utter_ask_for_opening_ticket:
-    - text: "Vuoi aprire un ticket di assistenza?"
-      buttons:
-        - title: "Sì"
-          payload: /confirm_ticket
-        - title: "No"
-          payload: /reject_ticket
-
-  utter_ask_for_commercial_info:
-    - text: "Su quale ambito vuoi informazioni?"
-      buttons:
-        - title: "Informatica (HW e SW)"
-          payload: /info_hwsw
-        - title: "Registratori di cassa"
-          payload: /info_registratoricassa
-
-  utter_ask_info_request:
-    - text: "Su cosa desideri ricevere informazioni?" 
-
-  utter_ask_info_address:
-    - text: "Può indicare un indirizzo e-mail o un numero di telefono al quale ricontattarla?" 
-
+    - text: "Benvenuto! Il perito industriale è un professionista tecnico che progetta, gestisce e verifica impianti e processi nei settori industriale e civile, garantendo qualità, sicurezza ed efficienza.
+             <br> Puoi trovare maggiori informazioni sulla presenza nella provincia di Como  <a href='https://peritiindustriali.como.it/'>qui</a>"
 
 
 actions:
   - action_default_fallback
   - action_download_logo
-  - action_validate_login
-  - action_set_service_area_mago
-  - action_set_service_area_fotocopiatori
-  - action_set_service_area_registratori_di_cassa
-  - action_ask_llm
-  - validate_generic_assistance_form
-  - action_open_a_closed_ticket
-  - action_open_a_open_ticket
-  - action_set_info_type_1
-  - action_set_info_type_2
-  - action_send_mail_for_info
-
-
-
-
-
