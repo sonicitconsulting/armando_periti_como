@@ -58,3 +58,43 @@ nlu:
       - Quali sono le tue funzionalità principali?
       - Potresti farmi vedere il tuo menu delle opzioni?
 
+  - intent: lev_1_info
+    examples: |
+      - Vorrei informazioni generali
+      - Mi dai info?
+      - Che cos'è questo servizio?
+      - Ho bisogno di informazioni
+      - Informazioni
+
+  - intent: lev_1_associazione
+    examples: |
+      - come posso associarmi all'ordine
+      - vorrei iscrivermi all'ordine
+      - come faccio a entrare nell'ordine
+      - come si fa ad associarsi all'ordine
+      - voglio diventare membro dell'ordine
+      - come ottenere l’iscrizione all’ordine
+      - desidero entrare a far parte dell’ordine
+      - quali sono i requisiti per associarsi all’ordine
+      - come posso fare domanda di iscrizione all’ordine
+      - mi puoi spiegare come associarmi all’ordine
+      - come funziona l’iscrizione all’ordine
+      - vorrei aderire all’ordine
+      - come posso aderire all’ordine
+      - cosa devo fare per entrare nell’ordine
+      - qual è la procedura per associarsi all’ordine
+      - come si diventa membri dell’ordine
+      - come posso registrarmi all’ordine
+      - voglio fare parte dell’ordine
+      - come ottenere la tessera dell’ordine
+      - come presentare la domanda per l’ordine
+      - cosa serve per iscriversi all’ordine
+      - mi interessa l’iscrizione all’ordine
+      - dove posso fare domanda di iscrizione all’ordine
+      - come posso diventare socio dell’ordine
+      - voglio associarmi, come si fa
+      - che passi devo seguire per associarmi all’ordine
+      - dove trovo il modulo per l’iscrizione all’ordine
+      - come posso entrare a far parte dell’ordine professionale
+      - vorrei sapere come ci si associa all’ordine
+      - come funziona la procedura di adesione all’ordine

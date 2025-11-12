@@ -17,3 +17,9 @@ stories:
       - intent: under_construction
       - action: utter_under_construction
 
+  - story: informazioni generali
+    steps:
+      - intent: lev_1_info
+      - action: utter_info_generali
+      - action: utter_menu_principale
+

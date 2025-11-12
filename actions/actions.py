@@ -51,7 +51,28 @@ class ActionDownloadLogo(Action):
         
         return []
 
+class ActionSetTopicAssociazione(Action):
+    def name(self):
+        return "action_set_topic_associazione"
     
+    def run(self, dispatcher, tracker, domain):
+        return [SlotSet("topic", "associazione")]
+
+class ActionSetTopicLegal(Action):
+    def name(self):
+        return "action_set_topic_legal"
+    
+    def run(self, dispatcher, tracker, domain):
+        return [SlotSet("topic", "legal")]
+    
+class ActionSetTopicEppi(Action):
+    def name(self):
+        return "action_set_topic_eppi"
+    
+    def run(self, dispatcher, tracker, domain):
+        return [SlotSet("topic", "eppi")]
+    
+
 class ActionAskLLM(Action):
     def name(self) -> str:
         return "action_ask_llm"
@@ -59,17 +80,15 @@ class ActionAskLLM(Action):
     def run(self, dispatcher: CollectingDispatcher,
             tracker: Tracker,
             domain: DomainDict) -> list:
-        device_model = tracker.get_slot("device_model")
-        description = tracker.get_slot("problem_description")
-        service_area = tracker.get_slot("service_area")
+        user_question = tracker.get_slot("user_question")
+        service_area = tracker.get_slot("topic")
 
-        message_to_llm = (
-            f"Con riferimento al prodotto '{device_model}' "
-            f"il cliente ha questo problema: '{description}'. Trova la risposta nella knowledge base."
-        )
+        message_to_llm = ""
 
-        response = self.llm_query(message_to_llm)
-        llm_solution = self.estrai_text_response(response)
+        #response = self.llm_query(message_to_llm)
+        #llm_solution = self.estrai_text_response(response)
+
+        llm_solution = "Risopsta di LLM"
 
         if llm_solution == "__NO__KB__":
             dispatcher.utter_message(response="utter_no_knowledge_base")
@@ -111,12 +130,12 @@ class ActionAskLLM(Action):
         """
 
         # Recupero variabili d'ambiente — fallisco subito se mancano
-        base_url       = os.getenv("ANYTHINGLLM_URL")
-        workspace_slug = os.getenv("ANYTHINGLLM_WORKSPACE")
-        api_key        = os.getenv("ANYTHINGLLM_API_KEY")
+        base_url       = os.getenv("LLM_BACKEND")
+        workspace_slug = os.getenv("LLM_ENIVIRONMENT")
+        api_key        = os.getenv("LLM_API_KEY")
         if not all((base_url, workspace_slug, api_key)):
             raise EnvironmentError(
-                "Imposta le variabili ANYTHINGLLM_URL, ANYTHINGLLM_WORKSPACE e ANYTHINGLLM_API_KEY."
+                "Imposta le variabili LLM_BACKEND, LLM_ENIVIRONMENT e LLM_API_KEY."
             )
 
         url = f"{base_url.rstrip('/')}/api/v1/workspace/{workspace_slug}/chat"
@@ -158,3 +177,20 @@ class ActionAskLLM(Action):
             Il contenuto di 'textResponse', oppure None se il campo non è presente.
         """
         return api_response.get("textResponse")
+    
+
+class ActionBookMeeting(Action):
+    def name(self) -> str:
+        return "action_book_meeting"
+
+    def run(self, dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domain: DomainDict) -> list:
+        user_name = tracker.get_slot("user_name")
+        user_email = tracker.get_slot("user_email")
+
+        utter_out = f"Appuntamento chiesto per {user_name} - Recapito {user_email}"
+
+        dispatcher.utter_message(text=utter_out)
+
+        return[]

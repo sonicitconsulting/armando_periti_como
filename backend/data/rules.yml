@@ -10,4 +10,71 @@ rules:
       - intent: nlu_fallback
       - action: action_default_fallback
 
+  - rule: set topic associazione 
+    steps: 
+      - intent: lev_1_associazione
+      - action: action_set_topic_associazione
+      - slot_was_set:
+          - topic: associazione
+      - action: user_question_form 
+      - active_loop: user_question_form
+
+##  - rule: set topic legal 
+##    steps: 
+##      - intent: lev_1_legal
+##      - action: action_set_topic_legal
+##      - slot_was_set:
+##          - topic: legal
+##      - action: user_question_form 
+##      - active_loop: user_question_form
+
+##  - rule: set topic eppi 
+##    steps: 
+##      - intent: lev_1_eppi
+##      - action: action_set_topic_eppi
+##      - slot_was_set:
+##          - topic: eppi
+##      - action: user_question_form 
+##      - active_loop: user_question_form
+
+
+  - rule: Completamento form
+    condition:
+      - active_loop: user_question_form
+    steps:
+      - action: user_question_form
+      - active_loop: null
+      - action: action_ask_llm
+      - action: utter_ask_confirm_llm_solution
+
+  - rule: Soluzione confermata
+    condition:
+      - active_loop: null
+    steps:
+      - intent: confirm_solution
+      - action: utter_solution_confirmed
+
+  - rule: Soluzione rifiutata
+    condition:
+      - active_loop: null
+    steps:
+      - intent: reject_solution
+      - action: utter_ask_for_book_meeting
+
+  - rule: book meeting
+    steps: 
+      - intent: confirm_meeting
+      - action: user_data_form 
+      - active_loop: user_data_form
+
+
+  - rule: Completamento form meeting
+    condition:
+      - active_loop: user_data_form
+    steps:
+      - action: user_data_form
+      - active_loop: null
+      - action: action_book_meeting
+
+
  
