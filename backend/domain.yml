@@ -141,5 +141,7 @@ actions:
   - action_default_fallback
   - action_download_logo
   - action_set_topic_associazione
+  - action_set_topic_legal
+  - action_set_topic_eppi
   - action_ask_llm
   - action_book_meeting

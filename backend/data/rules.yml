@@ -19,6 +19,24 @@ rules:
       - action: user_question_form 
       - active_loop: user_question_form
 
+  - rule: set topic legal 
+    steps: 
+      - intent: lev_1_legal
+      - action: action_set_topic_legal
+      - slot_was_set:
+          - topic: legal
+      - action: user_question_form 
+      - active_loop: user_question_form
+
+  - rule: set topic eppi 
+    steps: 
+      - intent: lev_1_eppi
+      - action: action_set_topic_eppi
+      - slot_was_set:
+          - topic: eppi
+      - action: user_question_form 
+      - active_loop: user_question_form
+
 
   - rule: Completamento form
     condition:
