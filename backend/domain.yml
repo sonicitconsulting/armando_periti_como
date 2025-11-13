@@ -54,6 +54,14 @@ slots:
           - active_loop: user_data_form
             requested_slot: user_email
 
+  user_phone:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_text
+        conditions : 
+          - active_loop: user_data_form
+            requested_slot: user_phone
 
 forms:
   user_question_form:
@@ -64,7 +72,7 @@ forms:
     required_slots:
       - user_name
       - user_email
-
+      - user_phone
 
 responses:
   
@@ -95,13 +103,16 @@ responses:
              <br> Puoi trovare maggiori informazioni sulla presenza nella provincia di Como  <a href='https://peritiindustriali.como.it/'>qui</a>."
 
   utter_ask_user_question:
-    - text: "?"
+    - text: "Di cosa hai bisogno?"
 
   utter_ask_user_name:
     - text: "Può lasciarmi il suo nome e cognome?"
 
   utter_ask_user_email:
     - text: "Può indicarmi un indirizzo email?"
+
+  utter_ask_user_phone:
+    - text: "E un recapito telefonico?"
 
   utter_ask_confirm_llm_solution:
     - text: "La soluzione proposta è stata utile?"
@@ -111,8 +122,11 @@ responses:
         - title: "No"
           payload: /reject_solution
 
-  utter_solution_confirmed:
+  utter_exit_positive:
     - text: "Grazie per aver usato Peritus!"
+
+  utter_exit_negative:
+    - text: "Mi spiace di non essere stato utile. La conversazione è stata però registrata in forma anonima, così da poter arrichire in futuro la mia conoscenza e poter rispondere anche a questa domanda."
 
   utter_ask_for_book_meeting:
     - text: "Vuoi prendere un appuntamento?"
@@ -127,7 +141,5 @@ actions:
   - action_default_fallback
   - action_download_logo
   - action_set_topic_associazione
-  - action_set_topic_legal
-  - action_set_topic_eppi
   - action_ask_llm
   - action_book_meeting
