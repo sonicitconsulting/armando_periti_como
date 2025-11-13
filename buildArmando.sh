@@ -72,5 +72,5 @@ fi
 cd "$CURRENT_DIR"
 
 if [ "$start_application" == "S" ]; then
-  docker compose up 
+  docker compose up -d 
 fi

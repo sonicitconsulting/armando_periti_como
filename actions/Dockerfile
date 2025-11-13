@@ -12,9 +12,6 @@ RUN apt-get update \
 
  RUN pip install msal requests
 
-# Torna all’utente non-privilegiato usato da Rasa SDK
-
-USER 1001
 # Crea la directory di lavoro
 WORKDIR /app
 

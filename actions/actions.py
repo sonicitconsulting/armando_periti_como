@@ -85,10 +85,10 @@ class ActionAskLLM(Action):
 
         message_to_llm = ""
 
-        #response = self.llm_query(message_to_llm)
-        #llm_solution = self.estrai_text_response(response)
+        response = self.llm_query(message_to_llm)
+        llm_solution = self.estrai_text_response(response)
 
-        llm_solution = "Risopsta di LLM"
+        ## llm_solution = "Risopsta di LLM"
 
         if llm_solution == "__NO__KB__":
             dispatcher.utter_message(response="utter_no_knowledge_base")
@@ -131,7 +131,7 @@ class ActionAskLLM(Action):
 
         # Recupero variabili d'ambiente — fallisco subito se mancano
         base_url       = os.getenv("LLM_BACKEND")
-        workspace_slug = os.getenv("LLM_ENIVIRONMENT")
+        workspace_slug = os.getenv("LLM_ENVIRONMENT")
         api_key        = os.getenv("LLM_API_KEY")
         if not all((base_url, workspace_slug, api_key)):
             raise EnvironmentError(
@@ -140,13 +140,15 @@ class ActionAskLLM(Action):
 
         url = f"{base_url.rstrip('/')}/api/v1/workspace/{workspace_slug}/chat"
         headers = {
-            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            "Authorization": f"Bearer {api_key}",
         }
-        payload = {"message": message, "mode": "query"}   # mode fissato a "query"
+        payload = {"message": message}
 
         response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+
+        print("Request headers:", response.request.headers)
+        print("Payload inviato:", response.request.body)
 
         try:
             response.raise_for_status()

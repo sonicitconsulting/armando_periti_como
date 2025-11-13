@@ -35,13 +35,9 @@ services:
       image: armando_actions:latest
       restart: unless-stopped
       environment:
-        - LLM_ENDOPOINT=http://armando_llm_core:${LLM_CORE_PORT}
-        - ANYTHINGLLM_URL=${ANYTHINGLLM_URL}
-        - ANYTHINGLLM_WORKSPACE=${ANYTHINGLLM_WORKSPACE}
-        - ANYTHINGLLM_API_KEY=${ANYTHINGLLM_API_KEY}
-        - ATIUM_ENDPOINT=${ATIUM_ENDPOINT}
-        - ATIUM_USER=${ATIUM_USER}
-        - ATIUM_PASSWORD=${ATIUM_PASSWORD}
+        - LLM_BACKEND=${LLM_BACKEND}
+        - LLM_ENVIRONMENT=${LLM_ENVIRONMENT}
+        - LLM_API_KEY=${LLM_API_KEY}
       ports:
         - ${ACTIONS_ENGINE_PORT}:5055
       networks:
