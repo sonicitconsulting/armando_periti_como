@@ -81,6 +81,11 @@ rules:
       - active_loop: null
       - action: action_find_slots
 
+  - rule: scrive appuntamento su calendario
+    steps:
+      - intent: book_meeting
+      - action: action_book_meeting
+
 
 
 

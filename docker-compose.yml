@@ -40,6 +40,7 @@ services:
         - LLM_API_KEY=${LLM_API_KEY}
         - SERVICE_ACCOUNT_FILE=${SERVICE_ACCOUNT_FILE}
         - SCOPES=${SCOPES}
+        - CALENDAR_ID=${CALENDAR_ID}
       ports:
         - ${ACTIONS_ENGINE_PORT}:5055
       networks:

@@ -16,6 +16,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import pytz
 import locale
+import json
 
 
 
@@ -92,8 +93,6 @@ class ActionAskLLM(Action):
         message_to_llm = user_question
         response = self.llm_query(message_to_llm)
         llm_solution = self.estrai_text_response(response)
-
-        ## llm_solution = "Risopsta di LLM"
 
         if llm_solution == "__NO__KB__":
             dispatcher.utter_message(response="utter_no_knowledge_base")
@@ -269,7 +268,10 @@ class ActionFindMeetingSlot(Action):
         return result
 
 
-    def find_free_hourly_slots(self, service, start, end, calendar_id='peritiindustrialicomo@gmail.com', slot_duration=timedelta(hours=1)):
+    def find_free_hourly_slots(self, service, start, end, calendar_id="", slot_duration=timedelta(hours=1)):
+
+        calendar_id = os.getenv("CALENDAR_ID")
+
         body = {
             "timeMin": self.to_rfc3339(start),
             "timeMax": self.to_rfc3339(end),
@@ -322,26 +324,125 @@ class ActionFindMeetingSlot(Action):
                 # Rendi testo con maiuscola iniziale
                 button_text = button_text[0].upper() + button_text[1:]
                 # Prepara payload (ad esempio 'action_prenota' come nome azione)
-                payload = f"/action_prenota{{\"start\": \"{start_local.isoformat()}\", \"end\": \"{end_local.isoformat()}\"}}"
+                payload = f"/book_meeting{{\"start\": \"{start_local.isoformat()}\", \"end\": \"{end_local.isoformat()}\"}}"
                 buttons.append({'title': button_text, 'payload': payload})
 
         dispatcher.utter_message(text="Scegli una fascia oraria:", buttons=buttons)
 
         return []
 
-
 class ActionBookMeeting(Action):
     def name(self) -> str:
         return "action_book_meeting"
+    
+    @staticmethod
+    def get_service():
+
+        service_account_file = os.getenv("SERVICE_ACCOUNT_FILE")
+        scopes = os.getenv("SCOPES")
+
+        scopes = [scopes]
+
+        credentials = service_account.Credentials.from_service_account_file(service_account_file, scopes=scopes)
+        service = build('calendar', 'v3', credentials=credentials)
+
+        return service
 
     def run(self, dispatcher: CollectingDispatcher,
             tracker: Tracker,
             domain: DomainDict) -> list:
+        
+        logging.basicConfig(
+            stream=sys.stdout,
+            level=logging.DEBUG
+        )
+                
+        user_question = tracker.get_slot("user_question")
+        service_area = tracker.get_slot("topic")
         user_name = tracker.get_slot("user_name")
         user_email = tracker.get_slot("user_email")
+        user_phone = tracker.get_slot("user_phone")
 
-        utter_out = f"Appuntamento chiesto per {user_name} - Recapito {user_email}"
+        try:
+            intent_text = tracker.latest_message.get("text", "")
+            json_part = intent_text[intent_text.find("{"):]  # trova la parentesi graffa
+            params = json.loads(json_part)
+            start = params.get("start")
+            end = params.get("end")
+        except Exception:
+            start = None
+            end = None
+
+        service = self.get_service()
+        
+        titolo = f"Incontro con {user_name}"
+        argomento = f"Incontro con {user_name} - Email: {user_email} - Telefono {user_phone} \n \n Quesito sottoposto: {user_question}"
+
+        logging.info(f"start date type: {type(start)}")
+        if self.add_google_calendar_event(service=service, titolo=titolo, argomento=argomento, inizio=start, fine=end):
+            date_str = self.format_date(start.replace(" ", "T"))
+            utter_out = f"Appuntamento fissato per {date_str}. Grazie per aver usato il nostro assistente virtuale!"
+        else:
+            utter_out = "Ci spiace, ma non è stato possibile fissare il suo appuntamento. La preghiamo di contattare la segreteria allo 031 267431"
 
         dispatcher.utter_message(text=utter_out)
 
         return[]
+ 
+    def add_google_calendar_event(self, service, titolo, argomento, inizio, fine):
+        """
+        Crea un evento su Google Calendar.
+        :param titolo: Titolo dell'evento
+        :param argomento: Descrizione/argomento dell'evento
+        :param inizio: datetime.datetime di inizio
+        :param fine: datetime.datetime di fine
+        """
+        calendar_id = os.getenv("CALENDAR_ID")
+
+        inizio = datetime.fromisoformat(inizio)
+        fine = datetime.fromisoformat(fine)
+
+        logging.basicConfig(
+            stream=sys.stdout,
+            level=logging.DEBUG
+        )
+
+        evento = {
+            'summary': titolo,
+            'description': argomento,
+            'start': {
+                'dateTime': self.safe_isoformat(inizio),
+                'timeZone': 'Europe/Rome',
+            },
+            'end': {
+                'dateTime': self.safe_isoformat(fine),
+                'timeZone': 'Europe/Rome',
+            }
+        }
+        try:
+            evento_creato = service.events().insert(calendarId=calendar_id, body=evento).execute()
+
+            event_id = evento_creato.get('id')
+            # Puoi restituire True/False oppure direttamente l’ID
+            return True  # restituisce l'ID evento Google se creato
+        except Exception as e:
+            logging.error(f"Errore nella creazione dell'evento: {e}")
+            return False  # indica fallimento
+        
+    @staticmethod
+    def safe_isoformat(dt):
+        # accetta sia datetime sia stringa già formattata
+        if isinstance(dt, str):
+            return dt
+        return dt.isoformat()
+    
+    def format_date(data_str):
+        settimane = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"]
+        mesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
+
+        # Converti la stringa a oggetto datetime
+        dt = datetime.fromisoformat(data_str)
+        # Estrai i componenti
+        weekday = settimane[dt.weekday()]
+        month = mesi[dt.month - 1]
+        return f"{weekday} {dt.day} {month} {dt.year} ore {dt.hour}"

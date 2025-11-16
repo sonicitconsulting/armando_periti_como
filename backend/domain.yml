@@ -17,10 +17,17 @@ intents:
   - reject_solution
   - confirm_meeting
   - reject_meeting
+  - book_meeting
 
 
 slots:
   topic:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom 
+
+  llm_solution:
     type: text
     influence_conversation: true
     mappings:

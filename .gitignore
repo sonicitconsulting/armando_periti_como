@@ -209,3 +209,5 @@ __marimo__/
 chroma_db/
 
 armando-trackerdb/
+
+armando_service_account.json
