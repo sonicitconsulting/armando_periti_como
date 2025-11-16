@@ -38,6 +38,8 @@ services:
         - LLM_BACKEND=${LLM_BACKEND}
         - LLM_ENVIRONMENT=${LLM_ENVIRONMENT}
         - LLM_API_KEY=${LLM_API_KEY}
+        - SERVICE_ACCOUNT_FILE=${SERVICE_ACCOUNT_FILE}
+        - SCOPES=${SCOPES}
       ports:
         - ${ACTIONS_ENGINE_PORT}:5055
       networks:

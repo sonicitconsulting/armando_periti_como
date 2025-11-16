@@ -10,7 +10,12 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
- RUN pip install msal requests
+ RUN apt-get update \
+    && apt-get install -y locales \
+    && locale-gen it_IT.UTF-8 \
+    && update-locale
+
+RUN pip install requests google-api-python-client google-auth google-auth-oauthlib pytz
 
 # Crea la directory di lavoro
 WORKDIR /app

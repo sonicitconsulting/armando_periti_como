@@ -5,12 +5,19 @@ from rasa_sdk.events import SlotSet, UserUtteranceReverted
 from rasa_sdk.types import DomainDict
 from rasa_sdk.forms import FormValidationAction
 from rasa_sdk.events import SlotSet
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, timezone, time
 import base64
 import os
 import requests
 from typing import Any, Dict, Optional
-from msal import ConfidentialClientApplication
+import logging
+import sys
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+import pytz
+import locale
+
+
 
 
 class ActionDefaultFallback(Action):
@@ -72,7 +79,6 @@ class ActionSetTopicEppi(Action):
     def run(self, dispatcher, tracker, domain):
         return [SlotSet("topic", "eppi")]
     
-
 class ActionAskLLM(Action):
     def name(self) -> str:
         return "action_ask_llm"
@@ -83,8 +89,7 @@ class ActionAskLLM(Action):
         user_question = tracker.get_slot("user_question")
         service_area = tracker.get_slot("topic")
 
-        message_to_llm = ""
-
+        message_to_llm = user_question
         response = self.llm_query(message_to_llm)
         llm_solution = self.estrai_text_response(response)
 
@@ -99,35 +104,16 @@ class ActionAskLLM(Action):
         return [SlotSet("llm_solution", llm_solution)]
     
     @staticmethod
-    def llm_query(message: str, *, timeout: int | float = 30) -> Dict[str, Any]:
-        """
-        Invia `message` al thread di default del workspace configurato via
-        variabili d’ambiente e restituisce il JSON di risposta.
+    def llm_query(message: str, *, timeout: int | float = 180) -> Dict[str, Any]:
 
-        Richiede le variabili:
-            - ANYTHINGLLM_URL            es. "http://5.249.150.59:3001"
-            - ANYTHINGLLM_WORKSPACE      es. "geronimo"
-            - ANYTHINGLLM_API_KEY        es. "5MH9BWF-…"
 
-        Parameters
-        ----------
-        message : str
-            La domanda da inviare al chatbot.
-        timeout : int | float, default 30
-            Timeout HTTP in secondi.
+        logging.basicConfig(
+            stream=sys.stdout,
+            level=logging.DEBUG
+        )
 
-        Returns
-        -------
-        dict
-            JSON decodificato proveniente dal backend.
-
-        Raises
-        ------
-        EnvironmentError
-            Se una delle variabili d’ambiente non è impostata.
-        requests.HTTPError
-            Se il server risponde con status code ≥ 400.
-        """
+        if not message.strip():
+            raise ValueError("Il parametro 'message' non può essere vuoto.")
 
         # Recupero variabili d'ambiente — fallisco subito se mancano
         base_url       = os.getenv("LLM_BACKEND")
@@ -137,7 +123,7 @@ class ActionAskLLM(Action):
             raise EnvironmentError(
                 "Imposta le variabili LLM_BACKEND, LLM_ENIVIRONMENT e LLM_API_KEY."
             )
-
+        
         url = f"{base_url.rstrip('/')}/api/v1/workspace/{workspace_slug}/chat"
         headers = {
             "Content-Type": "application/json",
@@ -147,8 +133,9 @@ class ActionAskLLM(Action):
 
         response = requests.post(url, headers=headers, json=payload, timeout=timeout)
 
-        print("Request headers:", response.request.headers)
-        print("Payload inviato:", response.request.body)
+        logging.info("Request headers: {%s}", response.request.headers)
+        logging.info("Payload inviato: {%s}", response.request.body)
+        logging.info("Status: {%s}", response.raise_for_status())
 
         try:
             response.raise_for_status()
@@ -180,6 +167,168 @@ class ActionAskLLM(Action):
         """
         return api_response.get("textResponse")
     
+class ActionFindMeetingSlot(Action):
+    
+    def name(self) -> str:
+        return "action_find_slots"
+    
+
+    @staticmethod
+    def get_service():
+
+        service_account_file = os.getenv("SERVICE_ACCOUNT_FILE")
+        scopes = os.getenv("SCOPES")
+
+        scopes = [scopes]
+
+        credentials = service_account.Credentials.from_service_account_file(service_account_file, scopes=scopes)
+        service = build('calendar', 'v3', credentials=credentials)
+
+        return service
+    
+    @staticmethod
+    def to_rfc3339(dt):
+        # Converts datetime to RFC3339 ("Z" timezone for UTC)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+    @staticmethod
+    def next_monday(start_date=None):
+        if start_date is None:
+            start_date = datetime.now()
+        # Prendi solo la parte della data (senza ora)
+        start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        # weekday(): lunedì == 0
+        days_until_monday = (0 - start_date.weekday()) % 7
+        first_monday = start_date + timedelta(days=days_until_monday)
+        return first_monday
+
+    @staticmethod
+    def days_complement_busy(busy_list, tz=timezone.utc):
+        # Trova il range di date totale coperto
+        if not busy_list:
+            return {}
+        min_start = min(b[0] for b in busy_list).date()
+        max_end = max(b[1] for b in busy_list).date()
+
+        # Costruisce tabella free per ogni giorno
+        results = {}
+        for n in range((max_end - min_start).days + 1):
+            day = min_start + timedelta(days=n)
+            start_of_day = datetime.combine(day, time.min, tz)
+            end_of_day = start_of_day + timedelta(days=1)
+
+            # Filtra i busy che intersecano il giorno
+            busy_intervals = []
+            for b_start, b_end in busy_list:
+                if b_end > start_of_day and b_start < end_of_day:
+                    busy_intervals.append( (max(b_start, start_of_day), min(b_end, end_of_day)) )
+            busy_intervals.sort()
+
+            # Calcola i complementi (slot liberi)
+            free_slots = []
+            current = start_of_day
+            for b_start, b_end in busy_intervals:
+                if current < b_start:
+                    free_slots.append( (current, b_start) )
+                current = max(current, b_end)
+            if current < end_of_day:
+                free_slots.append( (current, end_of_day) )
+
+            results[day] = free_slots
+
+            results = {k: v for k, v in results.items() if v != []}
+
+        return results
+    
+    @staticmethod
+    def split_slot_in_hourly_blocks(slot, duration=timedelta(hours=1)):
+        blocks = []
+        slot_start, slot_end = slot
+        current = slot_start
+        while current + duration <= slot_end:
+            block_end = current + duration
+            blocks.append((current, block_end))
+            current = block_end
+        return blocks
+
+    def split_all_slots_by_day(self, day_slots_dict, duration=timedelta(hours=1)):
+        """
+        day_slots_dict: dict { datetime.date : [ (datetime, datetime), ... ] }
+        duration: blocco in output (default: 1 ora)
+        return: dict { datetime.date : [ (datetime, datetime), ... ] }
+        """
+        result = {}
+        for day, slots in day_slots_dict.items():
+            hour_blocks = []
+            for slot in slots:
+                hour_blocks.extend(self.split_slot_in_hourly_blocks(slot, duration))
+            if hour_blocks:
+                result[day] = hour_blocks
+        return result
+
+
+    def find_free_hourly_slots(self, service, start, end, calendar_id='peritiindustrialicomo@gmail.com', slot_duration=timedelta(hours=1)):
+        body = {
+            "timeMin": self.to_rfc3339(start),
+            "timeMax": self.to_rfc3339(end),
+            "items": [{"id": calendar_id}]
+        }
+        events_result = service.freebusy().query(body=body).execute()
+        busy_periods = events_result['calendars'][calendar_id]['busy']
+
+        busy_times = []
+        for period in busy_periods:
+            busy_times.append((
+                datetime.fromisoformat(period['start'].replace('Z', '+00:00')),
+                datetime.fromisoformat(period['end'].replace('Z', '+00:00'))
+            ))
+
+        slots = self.days_complement_busy(busy_times)
+
+        slots = self.split_all_slots_by_day(slots)
+
+        return slots
+
+    
+    def run(self, dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domain: DomainDict) -> list:
+
+        locale.setlocale(locale.LC_TIME, 'it_IT.UTF-8')
+        rome = pytz.timezone('Europe/Rome')
+
+
+        service = self.get_service()
+
+        start_date = self.next_monday()
+        end_date = start_date + timedelta(weeks=4)
+        slot_duration = timedelta(hours=1)
+    
+        free_slots = self.find_free_hourly_slots(service, start=start_date, end=end_date, slot_duration=slot_duration)
+
+        buttons = []
+
+        for d, slots in free_slots.items():
+            for start_utc, end_utc in slots:
+                # Converti in locale Roma
+                start_local = start_utc.astimezone(rome)
+                end_local = end_utc.astimezone(rome)
+                # Formatta testo pulsante: "Lunedì 17 novembre 2025, 14:00-15:00"
+                day_str = start_local.strftime('%A %d %B %Y')
+                time_str = f"{start_local.strftime('%H:%M')}-{end_local.strftime('%H:%M')}"
+                button_text = f"{day_str}, {time_str}"
+                # Rendi testo con maiuscola iniziale
+                button_text = button_text[0].upper() + button_text[1:]
+                # Prepara payload (ad esempio 'action_prenota' come nome azione)
+                payload = f"/action_prenota{{\"start\": \"{start_local.isoformat()}\", \"end\": \"{end_local.isoformat()}\"}}"
+                buttons.append({'title': button_text, 'payload': payload})
+
+        dispatcher.utter_message(text="Scegli una fascia oraria:", buttons=buttons)
+
+        return []
+
 
 class ActionBookMeeting(Action):
     def name(self) -> str:

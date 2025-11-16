@@ -145,3 +145,4 @@ actions:
   - action_set_topic_eppi
   - action_ask_llm
   - action_book_meeting
+  - action_find_slots

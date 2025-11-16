@@ -79,7 +79,7 @@ rules:
     steps:
       - action: user_data_form
       - active_loop: null
-      - action: action_book_meeting
+      - action: action_find_slots
 
 
 
