@@ -17,6 +17,7 @@ from googleapiclient.discovery import build
 import pytz
 import locale
 import json
+from itertools import islice
 
 
 
@@ -313,7 +314,9 @@ class ActionFindMeetingSlot(Action):
         buttons = []
 
         for d, slots in free_slots.items():
-            for start_utc, end_utc in slots:
+            for i, (start_utc, end_utc) in enumerate(slots):
+                if i == 10:
+                    break
                 # Converti in locale Roma
                 start_local = start_utc.astimezone(rome)
                 end_local = end_utc.astimezone(rome)
@@ -436,6 +439,7 @@ class ActionBookMeeting(Action):
             return dt
         return dt.isoformat()
     
+    @staticmethod
     def format_date(data_str):
         settimane = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"]
         mesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
