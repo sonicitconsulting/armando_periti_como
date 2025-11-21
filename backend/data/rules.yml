@@ -2,8 +2,15 @@ rules:
 
   - rule: risposta diretta a general_information
     steps:
-      - intent: general_information
+      - intent: lev_1_info
       - action: utter_info_generali
+      - action: utter_restart_conversation
+
+  - rule: richiesta Contatti
+    steps: 
+    - intent: lev_1_contatti
+    - action: utter_contatti
+    - action: utter_restart_conversation
 
   - rule: fallback rule
     steps:
@@ -95,6 +102,7 @@ rules:
   - rule: end conversation
     steps:
       - intent: end_conversation
+      - action: action_reset_custom_slots
       - action: utter_exit_positive
 
 
