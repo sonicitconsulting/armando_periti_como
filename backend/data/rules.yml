@@ -52,7 +52,7 @@ rules:
       - active_loop: null
     steps:
       - intent: confirm_solution
-      - action: utter_exit_positive
+      - action: utter_restart_conversation
 
   - rule: Soluzione rifiutata
     condition:
@@ -70,7 +70,7 @@ rules:
   - rule: end after rejecting book meeting
     steps: 
       - intent: reject_meeting
-      - action: utter_exit_negative
+      - action: utter_restart_conversation
 
   
   - rule: Completamento form meeting
@@ -85,6 +85,17 @@ rules:
     steps:
       - intent: book_meeting
       - action: action_book_meeting
+
+  - rule: restart conversation
+    steps:
+      - intent: restart_conversation
+      - action: action_reset_custom_slots
+      - action: utter_menu_principale
+
+  - rule: end conversation
+    steps:
+      - intent: end_conversation
+      - action: utter_exit_positive
 
 
 

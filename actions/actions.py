@@ -60,6 +60,24 @@ class ActionDownloadLogo(Action):
         
         return []
 
+class ActionResetCustomSlots(Action):
+    def name(self) -> Text:
+        return "action_reset_custom_slots"
+
+    def run(self, dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        slots_to_reset = [
+            "user_question",
+            "user_name",
+            "user_email",
+            "user_phone",
+            "llm_solution"
+        ]
+
+        return [SlotSet(slot, None) for slot in slots_to_reset]
+    
 class ActionSetTopicAssociazione(Action):
     def name(self):
         return "action_set_topic_associazione"
