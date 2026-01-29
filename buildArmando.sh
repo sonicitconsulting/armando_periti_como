@@ -63,7 +63,7 @@ if [ "$build_actions" == "S" ]; then
   echo "End building armando_actions"
   if [ "$export_images" == "S" ]; then
     echo "Start export armando_actions"
-    docker save -o armando_actions_"$docker_tag"_pc.tar armando_actions_èc:"$docker_tag"
+    docker save -o armando_actions_"$docker_tag"_pc.tar armando_actions_pc:"$docker_tag"
     mv armando_actions_"$docker_tag"_pc.tar ..
     echo "End export armando_actions"
   fi
