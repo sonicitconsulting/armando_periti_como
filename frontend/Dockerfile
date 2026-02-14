@@ -12,8 +12,8 @@ COPY . /var/www/html
 RUN chmod -R 755 assets
 RUN chmod -R 755 js
 RUN chmod -R 755 css
-#RUN rm js/config.json
-#RUN mv js/configProd.json js/config.json
+RUN rm js/config.json
+RUN mv js/configProd.json js/config.json
 
 # Abilita il modulo Apache Rewrite per URL rewriting
 RUN a2enmod rewrite
