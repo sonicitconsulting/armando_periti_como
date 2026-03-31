@@ -109,22 +109,19 @@ class ActionAskLLM(Action):
         user_question = tracker.get_slot("user_question")
         service_area = tracker.get_slot("topic")
 
-        message_to_llm = user_question
-        response = self.llm_query(message_to_llm)
-        llm_solution = self.estrai_text_response(response)
+        response = self.llm_query(user_question)
+        llm_solution = response.get("answer")
 
-        if llm_solution == "__NO__KB__":
+        if not llm_solution:
             dispatcher.utter_message(response="utter_no_knowledge_base")
             dispatcher.utter_message(response="utter_ask_for_opening_ticket")
         else:
             dispatcher.utter_message(text=llm_solution)
 
         return [SlotSet("llm_solution", llm_solution)]
-    
+
     @staticmethod
     def llm_query(message: str, *, timeout: int | float = 180) -> Dict[str, Any]:
-
-
         logging.basicConfig(
             stream=sys.stdout,
             level=logging.DEBUG
@@ -133,57 +130,39 @@ class ActionAskLLM(Action):
         if not message.strip():
             raise ValueError("Il parametro 'message' non può essere vuoto.")
 
-        # Recupero variabili d'ambiente — fallisco subito se mancano
-        base_url       = os.getenv("LLM_BACKEND")
-        workspace_slug = os.getenv("LLM_ENVIRONMENT")
-        api_key        = os.getenv("LLM_API_KEY")
-        if not all((base_url, workspace_slug, api_key)):
-            raise EnvironmentError(
-                "Imposta le variabili LLM_BACKEND, LLM_ENIVIRONMENT e LLM_API_KEY."
-            )
-        
-        url = f"{base_url.rstrip('/')}/api/v1/workspace/{workspace_slug}/chat"
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        }
-        payload = {"message": message}
+        base_url = os.getenv("LLM_BACKEND")
+        collection = os.getenv("RAG_COLLECTION")
+        if not all((base_url, collection)):
+            raise EnvironmentError("Imposta le variabili LLM_BACKEND e RAG_COLLECTION.")
+
+        url = f"{base_url.rstrip('/')}/query"
+        headers = {"Content-Type": "application/json"}
+        payload: Dict[str, Any] = {"query": message, "collection": collection}
 
         response = requests.post(url, headers=headers, json=payload, timeout=timeout)
 
-        logging.info("Request headers: {%s}", response.request.headers)
-        logging.info("Payload inviato: {%s}", response.request.body)
-        logging.info("Status: {%s}", response.raise_for_status())
+        logging.info("Request headers: %s", response.request.headers)
+        logging.info("Payload inviato: %s", response.request.body)
+
+        logging.info("Status: %s", response.status_code)
+        logging.info("Response body: %s", response.text)
 
         try:
             response.raise_for_status()
-        except requests.HTTPError as err:
-            # Logga corpo e headers per capire l'errore interno
+        except requests.HTTPError:
             print("=== STATUS ===", response.status_code)
             print("=== HEADERS ===", response.headers)
             print("=== BODY ===")
             print(response.text)
-            raise                  # rilancia l'eccezione per Rasa, se vuoi
-        
-        return response.json()
-    
-    @staticmethod
-    def estrai_text_response(api_response: Dict[str, Any]) -> Optional[str]:
-        """
-        Estrae e restituisce il campo 'textResponse' dal JSON già decodificato
-        ricevuto da `llm_query(...)`.
+            raise
 
-        Parameters
-        ----------
-        api_response : dict
-            Dizionario prodotto da `llm_query()`.
-
-        Returns
-        -------
-        str | None
-            Il contenuto di 'textResponse', oppure None se il campo non è presente.
-        """
-        return api_response.get("textResponse")
+        try:
+            return response.json()
+        except requests.exceptions.JSONDecodeError:
+            print("=== STATUS ===", response.status_code)
+            print("=== BODY (non-JSON) ===")
+            print(response.text)
+            raise
     
 class ActionFindMeetingSlot(Action):
     
