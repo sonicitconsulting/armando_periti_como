@@ -12,12 +12,15 @@ import requests
 from typing import Any, Dict, Optional
 import logging
 import sys
+import time
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import pytz
 import locale
 import json
 from itertools import islice
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -122,11 +125,6 @@ class ActionAskLLM(Action):
 
     @staticmethod
     def llm_query(message: str, *, timeout: int | float = 180) -> Dict[str, Any]:
-        logging.basicConfig(
-            stream=sys.stdout,
-            level=logging.DEBUG
-        )
-
         if not message.strip():
             raise ValueError("Il parametro 'message' non può essere vuoto.")
 
@@ -139,29 +137,23 @@ class ActionAskLLM(Action):
         headers = {"Content-Type": "application/json"}
         payload: Dict[str, Any] = {"query": message, "collection": collection}
 
+        logger.info("[OUTGOING] POST %s payload=%s", url, payload)
+        t0 = time.perf_counter()
         response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+        elapsed = time.perf_counter() - t0
 
-        logging.info("Request headers: %s", response.request.headers)
-        logging.info("Payload inviato: %s", response.request.body)
-
-        logging.info("Status: %s", response.status_code)
-        logging.info("Response body: %s", response.text)
+        logger.info("[RESPONSE] status=%s elapsed=%.3fs body=%s", response.status_code, elapsed, response.text)
 
         try:
             response.raise_for_status()
         except requests.HTTPError:
-            print("=== STATUS ===", response.status_code)
-            print("=== HEADERS ===", response.headers)
-            print("=== BODY ===")
-            print(response.text)
+            logger.error("[RESPONSE ERROR] status=%s headers=%s body=%s", response.status_code, response.headers, response.text)
             raise
 
         try:
             return response.json()
         except requests.exceptions.JSONDecodeError:
-            print("=== STATUS ===", response.status_code)
-            print("=== BODY (non-JSON) ===")
-            print(response.text)
+            logger.error("[RESPONSE ERROR] body non-JSON: %s", response.text)
             raise
     
 class ActionFindMeetingSlot(Action):
@@ -275,8 +267,12 @@ class ActionFindMeetingSlot(Action):
             "timeMax": self.to_rfc3339(end),
             "items": [{"id": calendar_id}]
         }
+        logger.info("[OUTGOING] Calendar freebusy.query calendar_id=%s timeMin=%s timeMax=%s", calendar_id, body["timeMin"], body["timeMax"])
+        t0 = time.perf_counter()
         events_result = service.freebusy().query(body=body).execute()
+        elapsed = time.perf_counter() - t0
         busy_periods = events_result['calendars'][calendar_id]['busy']
+        logger.info("[RESPONSE] freebusy.query elapsed=%.3fs busy_count=%d", elapsed, len(busy_periods))
 
         busy_times = []
         for period in busy_periods:
@@ -352,11 +348,6 @@ class ActionBookMeeting(Action):
             tracker: Tracker,
             domain: DomainDict) -> list:
         
-        logging.basicConfig(
-            stream=sys.stdout,
-            level=logging.DEBUG
-        )
-                
         user_question = tracker.get_slot("user_question")
         service_area = tracker.get_slot("topic")
         user_name = tracker.get_slot("user_name")
@@ -402,11 +393,6 @@ class ActionBookMeeting(Action):
         inizio = datetime.fromisoformat(inizio)
         fine = datetime.fromisoformat(fine)
 
-        logging.basicConfig(
-            stream=sys.stdout,
-            level=logging.DEBUG
-        )
-
         evento = {
             'summary': titolo,
             'description': argomento,
@@ -419,15 +405,20 @@ class ActionBookMeeting(Action):
                 'timeZone': 'Europe/Rome',
             }
         }
+        logger.info(
+            "[OUTGOING] Calendar events.insert calendar_id=%s summary=%r start=%s end=%s",
+            calendar_id, titolo, evento['start']['dateTime'], evento['end']['dateTime'],
+        )
         try:
+            t0 = time.perf_counter()
             evento_creato = service.events().insert(calendarId=calendar_id, body=evento).execute()
-
+            elapsed = time.perf_counter() - t0
             event_id = evento_creato.get('id')
-            # Puoi restituire True/False oppure direttamente l’ID
-            return True  # restituisce l'ID evento Google se creato
+            logger.info("[RESPONSE] events.insert elapsed=%.3fs event_id=%s", elapsed, event_id)
+            return True
         except Exception as e:
-            logging.error(f"Errore nella creazione dell'evento: {e}")
-            return False  # indica fallimento
+            logger.error("[RESPONSE ERROR] events.insert error=%s", e)
+            return False
         
     @staticmethod
     def safe_isoformat(dt):
