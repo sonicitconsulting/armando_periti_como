@@ -136,6 +136,10 @@ class ActionAskLLM(Action):
         url = f"{base_url.rstrip('/')}/query"
         headers = {"Content-Type": "application/json"}
         payload: Dict[str, Any] = {"query": message, "collection": collection}
+        prompt_file = os.path.join(os.path.dirname(__file__), "prompt.txt")
+        if os.path.isfile(prompt_file):
+            with open(prompt_file, encoding="utf-8") as f:
+                payload["user_prompt"] = f.read()
 
         logger.info("[OUTGOING] POST %s payload=%s", url, payload)
         t0 = time.perf_counter()
